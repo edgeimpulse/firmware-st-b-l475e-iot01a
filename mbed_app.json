@@ -1,0 +1,23 @@
+{
+    "target_overrides": {
+        "*": {
+            "platform.stdio-baud-rate" : 115200,
+            "platform.stdio-convert-newlines": true,
+            "rtos.main-thread-stack-size": "(4*1024)",
+            "mbed-http.http-buffer-size": "(1*1024)"
+        },
+        "DISCO_L475VG_IOT01A": {
+            "target.components_add": [ "QSPIF", "WIFI_ISM43362" ],
+            "target.network-default-interface-type": "WIFI",
+            "ism43362.read-thread-stack-size": 2048,
+            "ism43362.read-thread-stack-statically-allocated": true,
+            "qspif.QSPI_FREQ": "40000000"
+        }
+    },
+    "macros": [
+        "MBED_HEAP_STATS_ENABLED=1",
+        "MBED_MEM_TRACING_ENABLED",
+        "EI_SENSOR_AQ_STREAM=FILE",
+        "EI_CLASSIFIER_HAS_SAMPLER=1"
+    ]
+}

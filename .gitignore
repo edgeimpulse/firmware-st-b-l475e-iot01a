@@ -1,0 +1,16 @@
+BUILD/
+BSP_B-L475E-IOT01/
+mbed-http/
+mbed-os/
+mbed_settings.py*
+mbed-ws/
+ntp-client/
+QCBOR/
+wifi-ism43362/
+source/edge-impulse-sdk/utensor/CMakeFiles/
+source/edge-impulse-sdk/utensor/CMakeCache.txt
+source/edge-impulse-sdk/utensor/cmake_install.cmake
+source/edge-impulse-sdk/utensor/CTestTestfile.cmake
+source/edge-impulse-sdk/utensor/Makefile
+requirements.txt
+.mbed

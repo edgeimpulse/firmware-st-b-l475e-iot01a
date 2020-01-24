@@ -1,0 +1,15 @@
+QCBOR/
+wifi-ism43362/
+ntp-client/
+BSP_B-L475E-IOT01/
+mbed-http/
+mbed-ws/
+mbed-os/
+source/edge-impulse-sdk/utensor/
+*/TESTS/*
+mbed-os/docs/
+mbed-os/UNITTESTS/
+mbed-os/TESTS/
+mbed-os/TEST_APPS/
+.git/
+BUILD/

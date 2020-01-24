@@ -1,0 +1,5 @@
+sensor-aq-test
+node_modules/
+test/encoded.cbor
+package-lock.json
+ingestion-sdk-example
