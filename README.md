@@ -43,7 +43,7 @@ $ mbed config -G PROTOCOL SSH
 1. Clone this repository:
 
     ```
-    $ git clone git@github.com:edgeimpulse/firmware-st-b-l475e-iot01a.git
+    $ git clone https://github.com/edgeimpulse/firmware-st-b-l475e-iot01a
     ```
 
 1. Update dependencies:
@@ -55,7 +55,7 @@ $ mbed config -G PROTOCOL SSH
 1. Build and flash this project:
 
     ```
-    $ mbed compile --profile=debug -f
+    $ mbed compile -t GCC_ARM -m DISCO_L475VG_IOT01A --profile=debug -f
     ```
 
 1. Attach a serial monitor to the board on baud rate 115,200 to see the output.
