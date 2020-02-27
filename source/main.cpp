@@ -148,7 +148,6 @@ void run_nn(bool debug) {
         };
         char filename[128] = { 0 }; // out filename
         FILE *file = sampler->start(&payload, "device-classification", filename);
-        UNUSED(file);
         printf("Sampling... Storing in file name: %s\n", filename);
 
         // run the impulse: DSP, neural network and the Anomaly algorithm
@@ -170,6 +169,7 @@ void run_nn(bool debug) {
 #endif
 
         sampler->finish();
+        fclose(file);
         printf("Finished inferencing, raw data is stored in '%s'. Use AT+UPLOADFILE to send back to Edge Impulse.\n",
             filename);
 
