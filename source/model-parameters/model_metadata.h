@@ -60,6 +60,8 @@ typedef struct {
     int num_filters;
     int fft_length;
     int win_size;
+    int low_frequency;
+    int high_frequency;
     float pre_cof;
     int pre_shift;
 } ei_dsp_config_mfcc_t;
