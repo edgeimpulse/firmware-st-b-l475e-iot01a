@@ -20,49 +20,16 @@
  * SOFTWARE.
  */
 
-#ifdef __MBED__
-
-#include "mbed.h"
-#include "ei_classifier_porting.h"
-
-using namespace rtos;
-
-#ifdef ARDUINO
-#define EI_WEAK_FN __attribute__((weak))
-#else
-#define EI_WEAK_FN __weak
-#endif
-
-EI_WEAK_FN EI_IMPULSE_ERROR ei_run_impulse_check_canceled() {
-    return EI_IMPULSE_OK;
-}
+#include "ei_run_classifier_c.h"
 
 /**
- * Cancelable sleep, can be triggered with signal from other thread
+ * This function definition is just there to make sure
+ * that the symbol is not removed from the library.
  */
-EI_WEAK_FN EI_IMPULSE_ERROR ei_sleep(int32_t time_ms) {
-    ThisThread::sleep_for(time_ms);
-    return EI_IMPULSE_OK;
-}
+EI_IMPULSE_ERROR ei_run_classifier(
+    signal_t *signal,
+    ei_impulse_result_t *result,
+    bool debug) {
 
-uint64_t ei_read_timer_ms() {
-#if DEVICE_LPTICKER
-    return lp_ticker_read() / 1000L;
-#elif DEVICE_USTICKER
-    return us_ticker_read() / 1000L;
-#else
-    #error "Target does not have DEVICE_LPTICKER NOR DEVICE_USTICKER"
-#endif
+    return run_classifier(signal, result, debug);
 }
-
-uint64_t ei_read_timer_us() {
-#if DEVICE_LPTICKER
-    return lp_ticker_read();
-#elif DEVICE_USTICKER
-    return us_ticker_read();
-#else
-    #error "Target does not have DEVICE_LPTICKER NOR DEVICE_USTICKER"
-#endif
-}
-
-#endif // __MBED__

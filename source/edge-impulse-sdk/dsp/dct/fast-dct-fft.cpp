@@ -29,13 +29,17 @@
 #include "../numpy.hpp"
 #include "../memory.hpp"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846264338327950288
+#endif // M_PI
+
 // DCT type II, unscaled
 int ei::dct::transform(float vector[], size_t len) {
 	const size_t fft_data_out_size = (len / 2 + 1) * sizeof(ei::fft_complex_t);
 	const size_t fft_data_in_size = len * sizeof(float);
 
 	// Allocate KissFFT input / output buffer
-    ei::fft_complex_t *fft_data_out =
+    fft_complex_t *fft_data_out =
 		(ei::fft_complex_t*)ei_dsp_calloc(fft_data_out_size, 1);
 	if (!fft_data_out) {
 		return ei::EIDSP_OUT_OF_MEM;

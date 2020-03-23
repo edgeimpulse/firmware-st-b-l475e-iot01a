@@ -20,49 +20,28 @@
  * SOFTWARE.
  */
 
-#ifdef __MBED__
+#ifndef _EDGE_IMPULSE_RUN_CLASSIFIER_TYPES_H_
+#define _EDGE_IMPULSE_RUN_CLASSIFIER_TYPES_H_
 
-#include "mbed.h"
-#include "ei_classifier_porting.h"
+#include <stdint.h>
+#include "model_metadata.h"
 
-using namespace rtos;
+typedef struct {
+    const char *label;
+    float value;
+} ei_impulse_result_classification_t;
 
-#ifdef ARDUINO
-#define EI_WEAK_FN __attribute__((weak))
-#else
-#define EI_WEAK_FN __weak
-#endif
+typedef struct {
+    int sampling;
+    int dsp;
+    int classification;
+    int anomaly;
+} ei_impulse_result_timing_t;
 
-EI_WEAK_FN EI_IMPULSE_ERROR ei_run_impulse_check_canceled() {
-    return EI_IMPULSE_OK;
-}
+typedef struct {
+    ei_impulse_result_classification_t classification[EI_CLASSIFIER_LABEL_COUNT];
+    float anomaly;
+    ei_impulse_result_timing_t timing;
+} ei_impulse_result_t;
 
-/**
- * Cancelable sleep, can be triggered with signal from other thread
- */
-EI_WEAK_FN EI_IMPULSE_ERROR ei_sleep(int32_t time_ms) {
-    ThisThread::sleep_for(time_ms);
-    return EI_IMPULSE_OK;
-}
-
-uint64_t ei_read_timer_ms() {
-#if DEVICE_LPTICKER
-    return lp_ticker_read() / 1000L;
-#elif DEVICE_USTICKER
-    return us_ticker_read() / 1000L;
-#else
-    #error "Target does not have DEVICE_LPTICKER NOR DEVICE_USTICKER"
-#endif
-}
-
-uint64_t ei_read_timer_us() {
-#if DEVICE_LPTICKER
-    return lp_ticker_read();
-#elif DEVICE_USTICKER
-    return us_ticker_read();
-#else
-    #error "Target does not have DEVICE_LPTICKER NOR DEVICE_USTICKER"
-#endif
-}
-
-#endif // __MBED__
+#endif // _EDGE_IMPULSE_RUN_CLASSIFIER_TYPES_H_
