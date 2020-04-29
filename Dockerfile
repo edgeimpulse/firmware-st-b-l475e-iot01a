@@ -28,6 +28,10 @@ COPY . ./
 # create and build
 RUN mbed config -G GCC_ARM_PATH /gcc-arm-none-eabi-9-2019-q4-major/bin
 
+# The mbed-os library has an old version of this file, resulting in `__SXTB16_RORn` not
+# being defined. Copy over a replacement.
+RUN cp source/edge-impulse-sdk/CMSIS/Core/Include/cmsis_gcc.h mbed-os/cmsis/TARGET_CORTEX_M/cmsis_gcc.h
+
 RUN mbed compile -t GCC_ARM -m DISCO_L475VG_IOT01A --profile=debug && \
     rm -f *.zip && \
     zip -0 -q -r mbed-firmware.zip . -x *.git*
