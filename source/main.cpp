@@ -347,12 +347,11 @@ void fill_memory() {
     }
     printf("Allocated: %lu bytes\n", allocated);
 }
-
 int main() {
     // mbed_mem_trace_set_callback(mbed_mem_trace_default_callback);
 
     printf("\n\nHello from the Edge Impulse Device SDK.\n");
-
+    printf("Compiled on %s at %s\n",__DATE__,__TIME__);
     int err = fs.mount(&fs_bd);
     printf("Mounting file system: %s\n", (err ? "Fail :(" : "OK"));
     if (err) {
