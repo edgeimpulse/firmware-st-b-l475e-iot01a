@@ -35,6 +35,11 @@
 #define EI_FS_PREFIX "/fs/"
 #endif
 
+#ifdef EI_SENSOR_AQ_BLOCKDEVICE
+#include "SlicingBlockDevice.h"
+extern SlicingBlockDevice temp_bd;
+#endif
+
 /**
  * Command context bindings with Mbed OS file system
  */
@@ -111,6 +116,42 @@ static bool ei_mbed_fs_read_file(const char *path, void(*data_fn)(uint8_t*, size
     while ((read = fread(buffer, 1, sizeof(buffer), file)) > 0) {
         data_fn(buffer, read);
     }
+    return true;
+}
+
+/**
+ * Read from the temp buffer
+ */
+#ifdef __MBED__
+static bool ei_mbed_fs_read_buffer(size_t begin, size_t length, Callback<void(uint8_t*, size_t)> data_fn) {
+#else
+static bool ei_mbed_fs_read_buffer(size_t begin, size_t length, void(*data_fn)(uint8_t*, size_t)) {
+#endif
+
+    size_t pos = begin;
+    size_t bytes_left = length;
+
+    // we're encoding as base64 in AT+READFILE, so this needs to be divisable by 3
+    uint8_t buffer[513];
+    while (1) {
+        size_t bytes_to_read = sizeof(buffer);
+        if (bytes_to_read > bytes_left) {
+            bytes_to_read = bytes_left;
+        }
+        if (bytes_to_read == 0) {
+            return true;
+        }
+
+        int r = temp_bd.read(buffer, pos, bytes_to_read);
+        if (r != 0) {
+            return false;
+        }
+        data_fn(buffer, bytes_to_read);
+
+        pos += bytes_to_read;
+        bytes_left -= bytes_to_read;
+    }
+
     return true;
 }
 
@@ -209,6 +250,125 @@ bool ei_mbed_fs_upload_file(FILE *file, const char *filename) {
     return !err;
 }
 
+static BlockDevice *ei_mbed_fs_upload_bd_handler = NULL;
+static const size_t mbed_fs_upload_bd_buffer_size = 8 * 1024;
+static size_t mbed_fs_upload_bd_current_pos = 0;
+static size_t mbed_fs_upload_bd_total_size = 0;
+static uint8_t *ei_mbed_fs_upload_bd_buffer;
+
+const void * ei_mbed_fs_upload_bd_get_chunk(uint32_t* out_size) {
+    size_t bytes_to_read = mbed_fs_upload_bd_buffer_size;
+    if (mbed_fs_upload_bd_total_size - mbed_fs_upload_bd_current_pos < bytes_to_read) {
+        bytes_to_read = mbed_fs_upload_bd_total_size - mbed_fs_upload_bd_current_pos;
+    }
+
+    if (bytes_to_read == 0) {
+        *out_size = 0;
+        return (const void*)ei_mbed_fs_upload_bd_buffer;
+    }
+
+    int r = ei_mbed_fs_upload_bd_handler->read(ei_mbed_fs_upload_bd_buffer, mbed_fs_upload_bd_current_pos, bytes_to_read);
+    if (r != 0) {
+        printf("ERR: Failed to read %lu bytes from block device (%d)\n", bytes_to_read, r);
+        *out_size = 0;
+    }
+    else {
+        mbed_fs_upload_bd_current_pos += bytes_to_read;
+        *out_size = bytes_to_read;
+    }
+
+    return (const void*)ei_mbed_fs_upload_bd_buffer;
+}
+
+bool ei_mbed_fs_upload_from_blockdevice(BlockDevice *bd, size_t bd_start, size_t bd_end, const char *filename) {
+    if (strcmp(ei_config_get_config()->upload_host, "") == 0) {
+        printf("ERR: Not uploading file, upload_host not set\n");
+        return false;
+    }
+    if (strcmp(ei_config_get_config()->upload_path, "") == 0) {
+        printf("ERR: Not uploading file, upload_path not set\n");
+        return false;
+    }
+
+    if (!ei_mbed_fs_network) {
+        printf("ERR: Not uploading file, no network interface\n");
+        return false;
+    }
+
+    mbed_fs_upload_bd_current_pos = bd_start;
+    mbed_fs_upload_bd_total_size = bd_end;
+    ei_mbed_fs_upload_bd_handler = bd;
+
+    char url[257] = { 0 }; // max length of each of these fields is 128...
+    const char *host = ei_config_get_config()->upload_host;
+    const char *path = ei_config_get_config()->upload_path;
+    if (strlen(host) + strlen(path) > 256) {
+        printf("ERR: Host and path are longer than 256 characters, potential overflow!\n");
+        return false;
+    }
+    memcpy(url, host, strlen(host));
+    memcpy(url + strlen(host), path, strlen(path));
+
+    ei_mbed_fs_upload_bd_buffer = (uint8_t*)malloc(mbed_fs_upload_bd_buffer_size);
+    if (!ei_mbed_fs_upload_bd_buffer) {
+        printf("ERR: Could not allocate upload file buffer\n");
+        return false;
+    }
+
+    char *label;
+    float interval;
+    uint32_t length;
+    char *hmac_key;
+
+    EI_CONFIG_ERROR r = ei_config_get_sample_settings(&label, &interval, &length, &hmac_key);
+    if (r != EI_CONFIG_OK) {
+        printf("ERR: Failed to retrieve sample settings (%d)\n", r);
+        return false;
+    }
+
+    HttpRequest* req = new HttpRequest(ei_mbed_fs_network, HTTP_POST, (const char*)url);
+    req->set_header("Content-Type", "application/octet-stream");
+    // all our files are mounted under /fs/, so skip the first 4 bytes
+    req->set_header("X-File-Name", filename + 4);
+    req->set_header("X-API-Key", ei_config_get_config()->upload_api_key);
+    req->set_header("X-Label", label);
+
+    char content_len_buf[10];
+    int cont_r = snprintf(content_len_buf, 10, "%lu", bd_end - bd_start);
+    if (cont_r <= 0) {
+        printf("ERR: Failed to print content length (%d)\n", cont_r);
+        return false;
+    }
+
+    HttpResponse* res = req->send(&ei_mbed_fs_upload_bd_get_chunk);
+
+    free(ei_mbed_fs_upload_bd_buffer);
+
+    bool err = false;
+
+    if (res == NULL) {
+        printf("ERR: Failed to make request, error %d\n", req->get_error());
+        err = true;
+    }
+    else if (res->get_status_code() != 200) {
+        printf("ERR: Failed to upload, response code was not 200, but %d\n", res->get_status_code());
+        printf("%s\n", res->get_body_as_string().c_str());
+        err = true;
+    }
+
+    // printf("Response: %d - %s\n", res->get_status_code(), res->get_status_message().c_str());
+
+    // printf("Headers:\n");
+    // for (size_t ix = 0; ix < res->get_headers_length(); ix++) {
+    //     printf("\t%s: %s\n", res->get_headers_fields()[ix]->c_str(), res->get_headers_values()[ix]->c_str());
+    // }
+    // printf("\nBody (%lu bytes):\n\n%s\n", res->get_body_length(), res->get_body_as_string().c_str());
+
+    delete req;
+
+    return !err;
+}
+
 int ei_mbed_fs_get_device_type(uint8_t out_buffer[32], size_t *out_size) {
     const char *type = MBED_FS_EDGE_STRINGIZE(TARGET_NAME);
     memcpy(out_buffer, type, strlen(type));
@@ -228,8 +388,10 @@ int ei_mbed_fs_init(ei_config_ctx_t *cfg, NetworkInterface *network) {
     cfg->save_config = &ei_mbed_fs_save_config;
     cfg->list_files = &ei_mbed_fs_list_files;
     cfg->read_file = &ei_mbed_fs_read_file;
+    cfg->read_buffer = &ei_mbed_fs_read_buffer;
     cfg->unlink_file = &ei_mbed_fs_unlink_file;
     cfg->upload_file = &ei_mbed_fs_upload_file;
+    cfg->upload_from_blockdevice = &ei_mbed_fs_upload_from_blockdevice;
     cfg->get_device_type = &ei_mbed_fs_get_device_type;
 
     return 0;

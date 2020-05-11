@@ -286,6 +286,24 @@ public:
         }
     }
 
+    /**
+     * Upload buffer from blockdevice
+     */
+    void upload_buffer(BlockDevice *bd, size_t bd_start, size_t bd_end, const char *filename) {
+        if (_context->upload_file) {
+            if (_context->wifi_connection_status()) {
+                printf("Uploading... '%s' to %s%s...\n", filename,
+                    ei_config_get_config()->upload_host,
+                    ei_config_get_config()->upload_path);
+                _context->upload_from_blockdevice(bd, bd_start, bd_end, (const char*)filename);
+            }
+            else {
+                printf("Not uploading file, not connected to WiFi. Used buffer, from=%lu, to=%lu.\n",
+                    bd_start, bd_end);
+            }
+        }
+    }
+
 private:
 
     void write_sensor_data_internal(sensor_aq_ctx *ctx, float *values, size_t values_size) {

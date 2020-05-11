@@ -18,6 +18,7 @@
         "MBED_HEAP_STATS_ENABLED=1",
         "MBED_MEM_TRACING_ENABLED",
         "EI_SENSOR_AQ_STREAM=FILE",
+        "EI_SENSOR_AQ_BLOCKDEVICE=BlockDevice",
         "EI_CLASSIFIER_HAS_SAMPLER=1"
     ]
 }

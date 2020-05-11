@@ -182,6 +182,10 @@ typedef struct {
  * Write a buffer to the stream
  */
 static size_t ei_fwrite(sensor_aq_ctx *ctx, const void *ptr, size_t size, size_t count) {
+    if (ctx->stream == NULL) {
+        return AQ_STREAM_IS_NULL;
+    }
+
     size_t items_written = ctx->fwrite(ptr, size, count, ctx->stream);
 
     return items_written;
@@ -191,6 +195,10 @@ static size_t ei_fwrite(sensor_aq_ctx *ctx, const void *ptr, size_t size, size_t
  * Set position of the stream
  */
 static int ei_fseek(sensor_aq_ctx *ctx, long int offset, int origin) {
+    if (ctx->stream == NULL) {
+        return AQ_STREAM_IS_NULL;
+    }
+
     return ctx->fseek(ctx->stream, offset, origin);
 }
 
@@ -207,6 +215,10 @@ __attribute__((unused)) static bool is_valid_senml_unit(const char *unit) {
 }
 
 static int sensor_aq_update_sig_and_write_to_file(sensor_aq_ctx *ctx, uint8_t *ptr, size_t size) {
+    if (ctx->stream == NULL) {
+        return AQ_STREAM_IS_NULL;
+    }
+
     // Update the signature
     int ctx_err = ctx->signature_ctx->update(ctx->signature_ctx, ptr, size);
     if (ctx_err != 0) {
@@ -225,6 +237,10 @@ static int sensor_aq_update_sig_and_write_to_file(sensor_aq_ctx *ctx, uint8_t *p
 }
 
 static int sensor_aq_flush_buffer(sensor_aq_ctx *ctx) {
+    if (ctx->stream == NULL) {
+        return AQ_STREAM_IS_NULL;
+    }
+
     UsefulBufC encoded = UsefulOutBuf_OutUBuf(&(ctx->encode_context.OutBuf));
 
     QCBORError res = QCBOREncode_Finish(&ctx->encode_context, &encoded);
@@ -252,14 +268,14 @@ static int sensor_aq_flush_buffer(sensor_aq_ctx *ctx) {
  *
  * @returns Status code (0 = OK, -60xx error from aq_init, positive number is error from QCBOR)
  */
-int sensor_aq_init(sensor_aq_ctx *ctx, sensor_aq_payload_info *payload_info, EI_SENSOR_AQ_STREAM *stream) {
+int sensor_aq_init(sensor_aq_ctx *ctx, sensor_aq_payload_info *payload_info, EI_SENSOR_AQ_STREAM *stream, bool allow_empty_stream = false) {
     if (ctx == NULL) {
         return AQ_CTX_IS_NULL;
     }
     if (payload_info == NULL) {
         return AQ_PAYLOAD_INFO_IS_NULL;
     }
-    if (stream == NULL) {
+    if (stream == NULL && !allow_empty_stream) {
         return AQ_STREAM_IS_NULL;
     }
 
@@ -424,9 +440,11 @@ int sensor_aq_init(sensor_aq_ctx *ctx, sensor_aq_payload_info *payload_info, EI_
         return ctx_err;
     }
 
-    // write the first part to the file
-    if (ei_fwrite(ctx, encoded.ptr, 1, encoded.len) != encoded.len) {
-        return AQ_STREAM_WRITE_FAILED;
+    if (stream != NULL) {
+        // write the first part to the file
+        if (ei_fwrite(ctx, encoded.ptr, 1, encoded.len) != encoded.len) {
+            return AQ_STREAM_WRITE_FAILED;
+        }
     }
 
     return AQ_OK;
@@ -441,6 +459,10 @@ int sensor_aq_init(sensor_aq_ctx *ctx, sensor_aq_payload_info *payload_info, EI_
 int sensor_aq_add_data(sensor_aq_ctx *ctx, float values[], size_t values_size) {
     if (values_size != ctx->axis_count) {
         return AQ_VALUES_SIZE_DOES_NOT_MATCH_AXIS_COUNT;
+    }
+
+    if (ctx->stream == NULL) {
+        return AQ_STREAM_IS_NULL;
     }
 
     // clear memory
@@ -476,6 +498,10 @@ int sensor_aq_add_data(sensor_aq_ctx *ctx, float values[], size_t values_size) {
 int sensor_aq_add_data_i16(sensor_aq_ctx *ctx, int16_t values[], size_t values_size) {
     if (values_size != ctx->axis_count) {
         return AQ_VALUES_SIZE_DOES_NOT_MATCH_AXIS_COUNT;
+    }
+
+    if (ctx->stream == NULL) {
+        return AQ_STREAM_IS_NULL;
     }
 
     // clear memory
@@ -537,6 +563,10 @@ int sensor_aq_add_data_batch(sensor_aq_ctx *ctx, int16_t values[], size_t values
         return AQ_BATCH_ONLY_SUPPORTS_SINGLE_AXIS;
     }
 
+    if (ctx->stream == NULL) {
+        return AQ_STREAM_IS_NULL;
+    }
+
     // clear memory
     memset(ctx->cbor_buffer.ptr, 0, ctx->cbor_buffer.len);
 
@@ -560,6 +590,10 @@ int sensor_aq_add_data_batch(sensor_aq_ctx *ctx, int16_t values[], size_t values
 
 int sensor_aq_finish(sensor_aq_ctx *ctx) {
     uint8_t final_byte[] = { 0xff };
+
+    if (ctx->stream == NULL) {
+        return AQ_STREAM_IS_NULL;
+    }
 
     // Update the signature
     int ctx_err = ctx->signature_ctx->update(ctx->signature_ctx, final_byte, 1);

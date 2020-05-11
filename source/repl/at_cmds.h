@@ -27,7 +27,7 @@
 #include "at_base64.h"
 #include "ei_config.h"
 
-#define EDGE_IMPULSE_AT_COMMAND_VERSION        "1.2.0"
+#define EDGE_IMPULSE_AT_COMMAND_VERSION        "1.3.0"
 
 static void at_clear_config() {
     printf("Clearing config and restarting system...\n");
@@ -59,12 +59,14 @@ static void at_get_wifi() {
     char *password;
     ei_config_security_t security;
     bool connected;
+    bool present;
 
-    EI_CONFIG_ERROR r = ei_config_get_wifi(&ssid, &password, &security, &connected);
+    EI_CONFIG_ERROR r = ei_config_get_wifi(&ssid, &password, &security, &connected, &present);
     if (r != EI_CONFIG_OK) {
         printf("Failed to retrieve WiFi config (%d)\n", r);
         return;
     }
+    printf("Present:   %d\n", present);
     printf("SSID:      %s\n", ssid);
     printf("Password:  %s\n", password);
     printf("Security:  %d\n", security);
@@ -280,6 +282,19 @@ static void at_read_file(char *filename) {
     }
 }
 
+static void at_read_buffer(char *start_s, char *length_s) {
+    size_t start = (size_t)atoi(start_s);
+    size_t length = (size_t)atoi(length_s);
+
+    bool success = ei_config_get_context()->read_buffer(start, length, at_read_file_data);
+    if (!success) {
+        printf("Failed to read from buffer\n");
+    }
+    else {
+        printf("\n");
+    }
+}
+
 static void at_unlink_file(char *filename) {
     bool success = ei_config_get_context()->unlink_file(filename);
     if (success) {
@@ -422,6 +437,7 @@ void ei_at_register_generic_cmds() {
     ei_at_cmd_register("MGMTSETTINGS=", "Sets current management settings (URL)", &at_set_mgmt_settings);
     ei_at_cmd_register("LISTFILES", "Lists all files on the device", &at_list_files);
     ei_at_cmd_register("READFILE=", "Read a specific file (as base64)", &at_read_file);
+    ei_at_cmd_register("READBUFFER=", "Read from the temporary buffer (as base64) (START,LENGTH)", &at_read_buffer);
     ei_at_cmd_register("UNLINKFILE=", "Unlink a specific file", &at_unlink_file);
     ei_at_cmd_register("UPLOADFILE=", "Upload a specific file", &at_upload_file);
     ei_at_cmd_register("SAMPLESTART=", "Start sampling", &at_sample_start);

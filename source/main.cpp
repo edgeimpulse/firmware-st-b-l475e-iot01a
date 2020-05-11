@@ -89,8 +89,9 @@ bool connect_to_wifi() {
     char *password;
     ei_config_security_t security;
     bool connected;
+    bool present;
 
-    if (ei_config_get_wifi(&ssid, &password, &security, &connected) != EI_CONFIG_OK) {
+    if (ei_config_get_wifi(&ssid, &password, &security, &connected, &present) != EI_CONFIG_OK) {
         printf("Failed to get WiFi credentials from config\n");
         return false;
     }
@@ -258,6 +259,10 @@ int get_device_id(uint8_t out_buffer[32], size_t *out_size) {
     return 0;
 }
 
+bool wifi_present() {
+    return true;
+}
+
 bool wifi_connection_status() {
     return network_connected;
 }
@@ -345,13 +350,14 @@ void fill_memory() {
             allocated += size;
         }
     }
-    printf("Allocated: %lu bytes\n", allocated);
+    printf("Allocated: %u bytes\n", allocated);
 }
 
 int main() {
     // mbed_mem_trace_set_callback(mbed_mem_trace_default_callback);
 
     printf("\n\nHello from the Edge Impulse Device SDK.\n");
+    printf("Compiled on %s at %s\n", __DATE__, __TIME__);
 
     int err = fs.mount(&fs_bd);
     printf("Mounting file system: %s\n", (err ? "Fail :(" : "OK"));
@@ -390,6 +396,7 @@ int main() {
     config_ctx.get_device_id = get_device_id;
     config_ctx.wifi_connection_status = wifi_connection_status;
     config_ctx.wifi_settings_changed = connect_to_wifi;
+    config_ctx.wifi_present = wifi_present;
     config_ctx.scan_wifi = wifi_scan;
     config_ctx.mgmt_is_connected = ws_client_is_connected;
     config_ctx.mgmt_get_last_error = ws_client_last_error;

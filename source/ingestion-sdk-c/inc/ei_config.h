@@ -106,6 +106,9 @@ typedef struct {
     // Return whether the network is connected
     bool (*wifi_connection_status)(void);
 
+    // Return whether the board has wifi capabilities
+    bool (*wifi_present)(void);
+
     // Function that will be called when WiFi settings are changed
     // use this to re-connect to the network
     // return true if network successfully connected
@@ -144,6 +147,19 @@ typedef struct {
 
     // Upload a file, return false if an error occured
     bool (*upload_file)(EI_SENSOR_AQ_STREAM *file, const char *filename);
+
+#ifdef EI_SENSOR_AQ_BLOCKDEVICE
+    bool (*upload_from_blockdevice)(EI_SENSOR_AQ_BLOCKDEVICE *bd, size_t bd_start, size_t bd_end, const char *filename);
+
+    // Read from buffer, invoke the function pointer with a block
+    // of memory for each section of the buffer you're reading
+    // Return false if the file does not exist
+#ifdef __MBED__
+    bool (*read_buffer)(size_t start, size_t length, Callback<void(uint8_t*, size_t)> data_fn);
+#else
+    bool (*read_buffer)(size_t start, size_t length, void(*data_fn)(uint8_t*, size_t));
+#endif
+#endif // EI_SENSOR_AQ_BLOCKDEVICE
 
     // Whether the device is connected to the remote management interface
     bool (*mgmt_is_connected)();
@@ -243,7 +259,7 @@ EI_CONFIG_ERROR ei_config_set_wifi(const char *ssid, const char *password, ei_co
  * @param password Out parameter
  * @param security Out parameter
  */
-EI_CONFIG_ERROR ei_config_get_wifi(char ** ssid, char ** password, ei_config_security_t *security, bool *connected) {
+EI_CONFIG_ERROR ei_config_get_wifi(char ** ssid, char ** password, ei_config_security_t *security, bool *connected, bool *present) {
     if (ei_config_ctx == NULL) return EI_CONFIG_NO_CONTEXT;
 
     *ssid = ei_config.wifi_ssid;
@@ -254,6 +270,13 @@ EI_CONFIG_ERROR ei_config_get_wifi(char ** ssid, char ** password, ei_config_sec
     }
     else {
         *connected = false;
+    }
+
+    if(ei_config_ctx->wifi_present) {
+        *present = ei_config_ctx->wifi_present();
+    }
+    else {
+        *present = false;
     }
 
     return EI_CONFIG_OK;
