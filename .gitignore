@@ -12,5 +12,3 @@ source/edge-impulse-sdk/utensor/CMakeCache.txt
 source/edge-impulse-sdk/utensor/cmake_install.cmake
 source/edge-impulse-sdk/utensor/CTestTestfile.cmake
 source/edge-impulse-sdk/utensor/Makefile
-requirements.txt
-.mbed
