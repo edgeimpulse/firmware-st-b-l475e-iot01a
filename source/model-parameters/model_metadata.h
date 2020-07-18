@@ -34,6 +34,8 @@
 #define EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE       (EI_CLASSIFIER_RAW_SAMPLE_COUNT * EI_CLASSIFIER_RAW_SAMPLES_PER_FRAME)
 #define EI_CLASSIFIER_INTERVAL_MS                16
 #define EI_CLASSIFIER_OUT_TENSOR_NAME            "y_pred/Softmax:0"
+#define EI_CLASSIFIER_INPUT_WIDTH                0
+#define EI_CLASSIFIER_INPUT_HEIGHT               0
 #define EI_CLASSIFIER_LABEL_COUNT                4
 #define EI_CLASSIFIER_HAS_ANOMALY                1
 #define EI_CLASSIFIER_FREQUENCY                  62.5
@@ -51,6 +53,11 @@ typedef struct {
     bool maximum;
     bool rms;
 } ei_dsp_config_flatten_t;
+
+typedef struct {
+    int axes;
+    const char * channels;
+} ei_dsp_config_image_t;
 
 typedef struct {
     int axes;
