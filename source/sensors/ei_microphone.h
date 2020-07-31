@@ -25,6 +25,7 @@
 
 #include "stm32l475e_iot01_audio.h"
 #include "ei_sampler.h"
+#include "ei_microphone_inference.h"
 
 /**
  * todo: we're using raw block device here because it's much faster
@@ -149,48 +150,17 @@ static void finish_and_upload(char *filename, uint32_t sample_length_ms) {
 }
 
 /**
-* @brief  Half Transfer user callback, called by BSP functions.
-* @param  None
-* @retval None
-*/
-void BSP_AUDIO_IN_HalfTransfer_CallBack(uint32_t Instance) {
+ * @brief      Called from the BSP audio callback function
+ *
+ * @param[in]  halfOrCompleteTransfer  Signal half or complete to indicate offset in sampleBuffer
+ */
+static void get_audio_from_dma_buffer(bool halfOrCompleteTransfer)
+{
     if (!is_recording) return;
     if (audio_event_count >= max_audio_event_count) return;
     audio_event_count++;
 
-    uint32_t buffer_size = PCM_BUFFER_LEN / 2; /* Half Transfer */
-    uint32_t nb_samples = buffer_size / sizeof(int16_t); /* Bytes to Length */
-
-    if ((AUDIO_BUFFER_IX + nb_samples) > AUDIO_BUFFER_NB_SAMPLES) {
-        return;
-    }
-
-    /* Copy first half of PCM_Buffer from Microphones onto Fill_Buffer */
-    memcpy(AUDIO_BUFFER + AUDIO_BUFFER_IX, PCM_Buffer, buffer_size);
-    AUDIO_BUFFER_IX += nb_samples;
-
-    if (AUDIO_BUFFER_IX == (AUDIO_BUFFER_NB_SAMPLES / 2)) {
-        // half full
-        mic_queue.call(&audio_buffer_callback, HALF);
-    }
-    else if (AUDIO_BUFFER_IX == AUDIO_BUFFER_NB_SAMPLES) {
-        // completely full
-        AUDIO_BUFFER_IX = 0;
-        mic_queue.call(&audio_buffer_callback, FULL);
-    }
-}
-
-/**
-* @brief  Transfer Complete user callback, called by BSP functions.
-* @param  None
-* @retval None
-*/
-void BSP_AUDIO_IN_TransferComplete_CallBack(uint32_t Instance) {
-    if (!is_recording) return;
-    if (audio_event_count >= max_audio_event_count) return;
-    audio_event_count++;
-
-    uint32_t buffer_size = PCM_BUFFER_LEN / 2; /* Half Transfer */
+    uint32_t buffer_size = PCM_BUFFER_LEN / 2;           /* Half Transfer */
     uint32_t nb_samples = buffer_size / sizeof(int16_t); /* Bytes to Length */
 
     if ((AUDIO_BUFFER_IX + nb_samples) > AUDIO_BUFFER_NB_SAMPLES) {
@@ -198,14 +168,17 @@ void BSP_AUDIO_IN_TransferComplete_CallBack(uint32_t Instance) {
     }
 
     /* Copy second half of PCM_Buffer from Microphones onto Fill_Buffer */
-    memcpy(AUDIO_BUFFER + AUDIO_BUFFER_IX, PCM_Buffer + nb_samples, buffer_size);
+    if (halfOrCompleteTransfer) {
+        memcpy(AUDIO_BUFFER + AUDIO_BUFFER_IX, PCM_Buffer + nb_samples, buffer_size);
+    } else {
+        memcpy(AUDIO_BUFFER + AUDIO_BUFFER_IX, PCM_Buffer, buffer_size);
+    }
     AUDIO_BUFFER_IX += nb_samples;
 
     if (AUDIO_BUFFER_IX == (AUDIO_BUFFER_NB_SAMPLES / 2)) {
         // half full
         mic_queue.call(&audio_buffer_callback, HALF);
-    }
-    else if (AUDIO_BUFFER_IX == AUDIO_BUFFER_NB_SAMPLES) {
+    } else if (AUDIO_BUFFER_IX == AUDIO_BUFFER_NB_SAMPLES) {
         // completely full
         AUDIO_BUFFER_IX = 0;
         mic_queue.call(&audio_buffer_callback, FULL);
@@ -260,6 +233,8 @@ bool ei_microphone_record(uint32_t sample_length_ms, uint32_t start_delay_ms, bo
     audio_event_count = 0;
     max_audio_event_count = sample_length_ms; // each event is 1ms., very convenient
     TEMP_FILE_IX = 0;
+
+    ei_microphone_inference_set_bsp_callback(&get_audio_from_dma_buffer);
 
     ret = BSP_AUDIO_IN_Record(AUDIO_INSTANCE, (uint8_t *) PCM_Buffer, PCM_BUFFER_LEN);
     if (ret != BSP_ERROR_NONE) {

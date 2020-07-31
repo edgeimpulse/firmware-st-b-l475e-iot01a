@@ -35,6 +35,7 @@
 #include "ei_max30102.h"
 #include "ei_accelerometer.h"
 #include "ei_microphone.h"
+#include "ei_microphone_inference.h"
 
 // set up two slices on block device, one for the file system, and one for temporary files
 static BlockDevice *full_bd = BlockDevice::get_default_instance();
@@ -233,6 +234,68 @@ void run_nn(bool debug) {
 #endif
     }
 }
+
+void run_nn_continuous(bool debug) {
+
+    int print_results = -(EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW * 2);
+
+    // summary of inferencing settings (from model_metadata.h)
+    printf("Inferencing settings:\n");
+    printf("\tInterval: %.2f ms.\n", (float)EI_CLASSIFIER_INTERVAL_MS);
+    printf("\tFrame size: %d\n", EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE);
+    printf("\tSample length: %d ms.\n", EI_CLASSIFIER_RAW_SAMPLE_COUNT / 16);
+    printf("\tNo. of classes: %d\n", sizeof(ei_classifier_inferencing_categories) / sizeof(ei_classifier_inferencing_categories[0]));
+
+    printf("Starting inferencing, press 'b' to break\n");
+
+    run_classifier_init();
+    ei_microphone_inference_start(EI_CLASSIFIER_SLICE_SIZE);
+
+    while (1) {        
+
+        bool m = ei_microphone_inference_record();
+        if (!m) {
+            printf("ERR: Failed to record audio...\n");
+            break;
+        }
+
+        signal_t signal;
+        signal.total_length = EI_CLASSIFIER_SLICE_SIZE;        
+        signal.get_data = &ei_microphone_audio_signal_get_data;
+        ei_impulse_result_t result = { 0 };
+
+        EI_IMPULSE_ERROR r = run_classifier_continuous(&signal, &result, debug);
+        if (r != EI_IMPULSE_OK) {
+            printf("ERR: Failed to run classifier (%d)\n", r);
+            break;
+        }
+
+        if(++print_results >= EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW) {
+            // print the predictions
+            printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
+                result.timing.dsp, result.timing.classification, result.timing.anomaly);
+            for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
+                printf("    %s: %.5f\n", result.classification[ix].label, result.classification[ix].value);
+            }
+            #if EI_CLASSIFIER_HAS_ANOMALY == 1
+            printf("    anomaly score: %.3f\n", result.anomaly);
+            #endif
+
+            print_results = 0;            
+        }
+    }
+    
+    ei_microphone_inference_end();
+}
+
+void run_nn_continuous_normal() {
+    run_nn_continuous(false);
+}
+
+void run_nn_continuous_debug() {
+    run_nn_continuous(true);
+}
+
 #else
 
 #error "EI_CLASSIFIER_SENSOR not configured, cannot configure `run_nn`"
@@ -423,6 +486,10 @@ int main() {
     ei_at_cmd_register("FILLMEMORY", "Try and fill the full RAM, to report free heap stats", fill_memory);
     ei_at_cmd_register("RUNIMPULSE", "Run the impulse", run_nn_normal);
     ei_at_cmd_register("RUNIMPULSEDEBUG", "Run the impulse with debug messages", run_nn_debug);
+    #if defined(EI_CLASSIFIER_SENSOR) && EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_MICROPHONE
+    ei_at_cmd_register("RUNIMPULSECONT", "Run the impulse continuously", run_nn_continuous_normal);
+    ei_at_cmd_register("RUNIMPULSECONTDEBUG", "Run the impulse continuously with debug messages", run_nn_continuous_debug);
+    #endif
 
     if (ei_config_has_wifi()) {
         connect_to_wifi();

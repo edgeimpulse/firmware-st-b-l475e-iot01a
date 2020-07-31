@@ -1,4 +1,4 @@
-/* Edge Impulse inferencing library
+/* Edge Impulse ingestion SDK
  * Copyright (c) 2020 EdgeImpulse Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,42 +20,17 @@
  * SOFTWARE.
  */
 
-#include "main.h"
-#include "edge-impulse-sdk/porting/ei_classifier_porting.h"
-#include <stdarg.h>
-#include <stdio.h>
+#ifndef EI_MICROPHONE_INFERENCE_H
+#define EI_MICROPHONE_INFERENCE_H
 
-__attribute__((weak)) EI_IMPULSE_ERROR ei_run_impulse_check_canceled() {
-    return EI_IMPULSE_OK;
-}
+/* Include ---------------------------------------------------------------- */
+#include "stdint.h"
 
-__attribute__((weak)) EI_IMPULSE_ERROR ei_sleep(int32_t time_ms) {
-    HAL_Delay(time_ms);
-    return EI_IMPULSE_OK;
-}
+/* Prototypes -------------------------------------------------------------- */
+bool ei_microphone_inference_start(uint32_t n_samples);
+bool ei_microphone_inference_record(void);
+int ei_microphone_audio_signal_get_data(size_t offset, size_t length, float *out_ptr);
+bool ei_microphone_inference_end(void);
+void ei_microphone_inference_set_bsp_callback(void (*sample_handle)(bool halfOrCompleteTransfer));
 
-uint64_t ei_read_timer_ms() {
-    return HAL_GetTick();
-}
-
-uint64_t ei_read_timer_us() {
-    return HAL_GetTick() * 1000;
-}
-
-__attribute__((weak)) void ei_printf(const char *format, ...) {
-    va_list myargs;
-    va_start(myargs, format);
-    vprintf(format, myargs);
-    va_end(myargs);
-}
-
-__attribute__((weak)) void ei_printf_float(float f) {
-    ei_printf("%f", f);
-}
-
-#if defined(__cplusplus) && EI_C_LINKAGE == 1
-extern "C"
 #endif
-__attribute__((weak)) void DebugLog(const char* s) {
-    ei_printf("%s", s);
-}
