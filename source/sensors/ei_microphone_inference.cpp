@@ -154,8 +154,8 @@ bool ei_microphone_inference_record(void)
 
     if (inference.buf_ready == 1) {
         printf(
-            "Error sample buffer overrun. Increase the number of sampler per slice "
-            "(EI_CLASSIFIER_SLICE_SIZE)\n");
+            "Error sample buffer overrun. Decrease the number of slices per model window "
+            "(EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW)\n");
         ret = false;
     }
 

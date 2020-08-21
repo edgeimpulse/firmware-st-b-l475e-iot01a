@@ -490,6 +490,8 @@ bool ei_microphone_sample_start() {
  * Get raw audio signal data
  */
 static int raw_audio_signal_get_data(size_t offset, size_t length, float *out_ptr) {
+    offset += mic_header_length;
+
     EIDSP_i16 *temp = (EIDSP_i16*)calloc(length, sizeof(EIDSP_i16));
     if (!temp) {
         printf("raw_audio_signal_get_data - malloc failed\n");
@@ -505,6 +507,7 @@ static int raw_audio_signal_get_data(size_t offset, size_t length, float *out_pt
 
     r = numpy::int16_to_float(temp, out_ptr, length);
     free(temp);
+
     return r;
 }
 
@@ -513,7 +516,7 @@ static int raw_audio_signal_get_data(size_t offset, size_t length, float *out_pt
  */
 signal_t ei_microphone_get_signal() {
     signal_t signal;
-    signal.total_length = TEMP_FILE_IX / sizeof(int16_t);
+    signal.total_length = (TEMP_FILE_IX - mic_header_length) / sizeof(int16_t);
     signal.get_data = &raw_audio_signal_get_data;
     return signal;
 }

@@ -237,7 +237,7 @@ void run_nn(bool debug) {
 
 void run_nn_continuous(bool debug) {
 
-    int print_results = -(EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW * 2);
+    int print_results = -(EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW);
 
     // summary of inferencing settings (from model_metadata.h)
     printf("Inferencing settings:\n");
@@ -270,7 +270,7 @@ void run_nn_continuous(bool debug) {
             break;
         }
 
-        if(++print_results >= EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW) {
+        if(++print_results >= (EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW >> 1)) {
             // print the predictions
             printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
                 result.timing.dsp, result.timing.classification, result.timing.anomaly);
