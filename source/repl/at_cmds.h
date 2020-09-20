@@ -264,7 +264,7 @@ static void at_read_file_data(uint8_t *buffer, size_t size) {
         return;
     }
 
-    for (size_t ix = 0; ix < r; ix++) {
+    for (int ix = 0; ix < r; ix++) {
         if (base64_buffer[ix] == 0) break;
         printf("%c", base64_buffer[ix]);
     }

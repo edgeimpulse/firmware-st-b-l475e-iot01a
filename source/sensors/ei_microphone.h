@@ -287,7 +287,7 @@ bool ei_microphone_record(uint32_t sample_length_ms, uint32_t start_delay_ms, bo
         // then we're gonna find the last byte that is not 0x00 in the CBOR buffer.
         // That should give us the whole header
         size_t end_of_header_ix = 0;
-        for (size_t ix = ei_mic_ctx.cbor_buffer.len - 1; ix >= 0; ix--) {
+        for (int ix = static_cast<int>(ei_mic_ctx.cbor_buffer.len) - 1; ix >= 0; ix--) {
             if (((uint8_t*)ei_mic_ctx.cbor_buffer.ptr)[ix] != 0x0) {
                 end_of_header_ix = ix;
                 break;
@@ -333,7 +333,7 @@ bool ei_microphone_record(uint32_t sample_length_ms, uint32_t start_delay_ms, bo
     erase_timer.stop();
     // printf("Erase timer took %d ms.\n", erase_timer.read_ms());
 
-    if (erase_timer.read_ms() > start_delay_ms) {
+    if (erase_timer.read_ms() > static_cast<int>(start_delay_ms)) {
         start_delay_ms = 0;
     }
     else {

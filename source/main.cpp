@@ -32,7 +32,6 @@
 #include "sensor_aq.h"
 #include "ei_ws_client.h"
 #include "model_metadata.h"
-#include "ei_max30102.h"
 #include "ei_accelerometer.h"
 #include "ei_microphone.h"
 #include "ei_microphone_inference.h"
@@ -48,7 +47,7 @@ EventQueue main_application_queue;
 EdgeSampler *sampler;
 DigitalOut led(LED1);
 
-static unsigned char repl_stack[8 * 1024];
+static unsigned char repl_stack[4 * 1024];
 static AtCmdRepl repl(&main_application_queue, sizeof(repl_stack), repl_stack);
 
 static WiFiInterface *network = NULL;
@@ -56,9 +55,8 @@ static bool network_connected = false;
 
 // this lists all the sensors that this device has (initialized later on, when we know whether
 // sensors are present on the board)
-static ei_sensor_t sensor_list[3] = { 0 };
+static ei_sensor_t sensor_list[2] = { 0 };
 
-static bool max30102_present;
 static bool microphone_present;
 
 void print_memory_info() {
@@ -251,7 +249,7 @@ void run_nn_continuous(bool debug) {
     run_classifier_init();
     ei_microphone_inference_start(EI_CLASSIFIER_SLICE_SIZE);
 
-    while (1) {        
+    while (1) {
 
         bool m = ei_microphone_inference_record();
         if (!m) {
@@ -260,7 +258,7 @@ void run_nn_continuous(bool debug) {
         }
 
         signal_t signal;
-        signal.total_length = EI_CLASSIFIER_SLICE_SIZE;        
+        signal.total_length = EI_CLASSIFIER_SLICE_SIZE;
         signal.get_data = &ei_microphone_audio_signal_get_data;
         ei_impulse_result_t result = { 0 };
 
@@ -281,10 +279,10 @@ void run_nn_continuous(bool debug) {
             printf("    anomaly score: %.3f\n", result.anomaly);
             #endif
 
-            print_results = 0;            
+            print_results = 0;
         }
     }
-    
+
     ei_microphone_inference_end();
 }
 
@@ -386,14 +384,6 @@ int get_sensor_list(const ei_sensor_t **list, size_t *list_size) {
         ix++;
         sensor_count++;
     }
-    if (max30102_present) {
-        sensor_list[ix].name = "MAX30102 HR / oximeter";
-        sensor_list[ix].start_sampling_cb = &ei_max30102_sample_start;
-        sensor_list[ix].max_sample_length_s = 5 * 60;
-        sensor_list[ix].frequencies[0] = 100.0f;
-        ix++;
-        sensor_count++;
-    }
 
     *list = sensor_list;
     *list_size = sensor_count;
@@ -449,7 +439,6 @@ int main() {
 
     // Sensor init
     ei_accelerometer_init();
-    max30102_present = ei_max30102_init();
     microphone_present = ei_microphone_init();
 
     // intialize configuration
