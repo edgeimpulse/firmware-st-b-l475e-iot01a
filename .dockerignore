@@ -6,9 +6,5 @@ mbed-http/
 mbed-ws/
 mbed-os/
 */TESTS/*
-mbed-os/docs/
-mbed-os/UNITTESTS/
-mbed-os/TESTS/
-mbed-os/TEST_APPS/
 .git/
 BUILD/
