@@ -22,19 +22,17 @@
 #ifndef _EI_CLASSIFIER_DSP_BLOCKS_H_
 #define _EI_CLASSIFIER_DSP_BLOCKS_H_
 
-#include "model_metadata.h"
-#include "ei_run_dsp.h"
-#include "ei_model_types.h"
-
-ei_model_dsp_t ei_dsp_block_20 = {
-    33,
-    &extract_spectral_analysis_features,
-    (void*)&ei_dsp_config_20
-};
+#include "model-parameters/model_metadata.h"
+#include "edge-impulse-sdk/classifier/ei_run_dsp.h"
+#include "edge-impulse-sdk/classifier/ei_model_types.h"
 
 const size_t ei_dsp_blocks_size = 1;
 ei_model_dsp_t ei_dsp_blocks[ei_dsp_blocks_size] = {
-    ei_dsp_block_20
+    { // DSP block 279
+        33,
+        &extract_spectral_analysis_features,
+        (void*)&ei_dsp_config_279
+    }
 };
 
 #endif // _EI_CLASSIFIER_DSP_BLOCKS_H_

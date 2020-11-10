@@ -21,18 +21,54 @@
  */
 
 #include "../ei_classifier_porting.h"
-#if EI_PORTING_ARDUINO == 1
+#if EI_PORTING_SILABS == 1
 
-#include "tensorflow/lite/micro/debug_log.h"
-#include <stdio.h>
+/* Include ----------------------------------------------------------------- */
 #include <stdarg.h>
+#include <stdio.h>
 
-// On mbed platforms, we set up a serial port and write to it for debug logging.
+/* Extern Silabs functions -------------------------------------------------- */
+extern "C" void UTIL_delay(uint32_t ms);
+extern "C" uint64_t UTIL_getTick(void);
+
+__attribute__((weak)) EI_IMPULSE_ERROR ei_run_impulse_check_canceled() {
+    return EI_IMPULSE_OK;
+}
+
+/**
+ * Cancelable sleep, can be triggered with signal from other thread
+ */
+__attribute__((weak)) EI_IMPULSE_ERROR ei_sleep(int32_t time_ms) {
+    UTIL_delay(time_ms);
+    return EI_IMPULSE_OK;
+}
+
+uint64_t ei_read_timer_ms()
+{
+    return UTIL_getTick();
+}
+
+uint64_t ei_read_timer_us()
+{
+    return 0;
+}
+
+__attribute__((weak)) void ei_printf(const char *format, ...) {
+    va_list myargs;
+    va_start(myargs, format);
+    vprintf(format, myargs);
+    va_end(myargs);
+}
+
+__attribute__((weak)) void ei_printf_float(float f) {
+    ei_printf("%f", f);
+}
+
 #if defined(__cplusplus) && EI_C_LINKAGE == 1
 extern "C"
-#endif // defined(__cplusplus) && EI_C_LINKAGE == 1
-void DebugLog(const char* s) {
+#endif
+__attribute__((weak)) void DebugLog(const char* s) {
     ei_printf("%s", s);
 }
 
-#endif // EI_PORTING_ARDUINO
+#endif // EI_PORTING_SILABS == 1
