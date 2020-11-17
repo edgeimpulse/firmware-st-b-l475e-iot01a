@@ -2,6 +2,8 @@
 
 [Edge Impulse](https://www.edgeimpulse.com) enables developers to create the next generation of intelligent device solutions with embedded Machine Learning. This repository contains the Edge Impulse firmware for the ST B-L475E-IOT01A development board. This device supports all Edge Impulse device features, including ingestion, remote management and inferencing.
 
+> **Note:** Do you just want to use this development board with Edge Impulse? No need to build this firmware. See the instructions [here](https://docs.edgeimpulse.com/docs/unboxing-the-st-b-l475e-iot01a) for a prebuilt image and instructions.
+
 ## Requirements
 
 **Hardware**
