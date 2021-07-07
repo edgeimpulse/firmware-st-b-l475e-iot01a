@@ -298,7 +298,7 @@ public:
                 _context->upload_from_blockdevice(bd, bd_start, bd_end, (const char*)filename);
             }
             else {
-                printf("Not uploading file, not connected to WiFi. Used buffer, from=%lu, to=%lu.\n",
+                printf("Not uploading file, not connected to WiFi. Used buffer, from=%u, to=%u.\n",
                     bd_start, bd_end);
             }
         }
