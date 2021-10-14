@@ -185,6 +185,11 @@ void run_nn(bool debug) {
 #elif defined(EI_CLASSIFIER_SENSOR) && EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_MICROPHONE
 
 void run_nn(bool debug) {
+    if (EI_CLASSIFIER_FREQUENCY != 16000) {
+        ei_printf("ERR: Frequency is %d but can only sample at 16000Hz\n", (int)EI_CLASSIFIER_FREQUENCY);
+        return;
+    }
+
     // summary of inferencing settings (from model_metadata.h)
     printf("Inferencing settings:\n");
     printf("\tInterval: %.2f ms.\n", (float)EI_CLASSIFIER_INTERVAL_MS);
@@ -234,6 +239,11 @@ void run_nn(bool debug) {
 }
 
 void run_nn_continuous(bool debug) {
+
+    if (EI_CLASSIFIER_FREQUENCY != 16000) {
+        ei_printf("ERR: Frequency is %d but can only sample at 16000Hz\n", (int)EI_CLASSIFIER_FREQUENCY);
+        return;
+    }
 
     int print_results = -(EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW);
 
