@@ -21,37 +21,54 @@
  */
 
 #include "../ei_classifier_porting.h"
-#if EI_PORTING_ECM3532 == 1
+#if EI_PORTING_RASPBERRY == 1
 
+#include "pico/stdlib.h"
 #include <stdarg.h>
 #include <stdlib.h>
-#include "eta_bsp.h"
-#include "FreeRTOS.h"
+#include <stdio.h>
+#include <string.h>
 
-__attribute__((weak)) EI_IMPULSE_ERROR ei_run_impulse_check_canceled() {
+#ifdef FREERTOS_ENABLED
+// Include FreeRTOS for delay
+#include <FreeRTOS.h>
+#include <task.h>
+#endif
+
+#define EI_WEAK_FN __attribute__((weak))
+
+EI_WEAK_FN EI_IMPULSE_ERROR ei_run_impulse_check_canceled() {
     return EI_IMPULSE_OK;
 }
 
-/**
- * Cancelable sleep, can be triggered with signal from other thread
- */
-__attribute__((weak)) EI_IMPULSE_ERROR ei_sleep(int32_t time_ms) {
-    EtaCspTimerDelayMs(time_ms);
+EI_WEAK_FN EI_IMPULSE_ERROR ei_sleep(int32_t time_ms) {
+#ifdef FREERTOS_ENABLED
+    vTaskDelay(time_ms / portTICK_PERIOD_MS);
+#else
+    sleep_ms(time_ms);
+#endif
     return EI_IMPULSE_OK;
 }
 
 uint64_t ei_read_timer_ms() {
-    return EtaCspTimerCountGetMs();
+    return to_ms_since_boot(get_absolute_time());
 }
 
 uint64_t ei_read_timer_us() {
-    return EtaCspTimerCountGetMs() * 1000;
+    return to_us_since_boot(get_absolute_time());
 }
 
-__attribute__((weak)) void ei_printf(const char *format, ...) {
+void ei_putchar(char c)
+{
+    /* Send char to serial output */
+    ei_printf("%c", c);
+}
 
-    extern tUart etaUart;
-    char print_buf[1024] = {0};
+/**
+ *  Printf function uses vsnprintf and output using USB Serial
+ */
+__attribute__((weak)) void ei_printf(const char *format, ...) {
+    static char print_buf[1024] = { 0 };
 
     va_list args;
     va_start(args, format);
@@ -59,34 +76,49 @@ __attribute__((weak)) void ei_printf(const char *format, ...) {
     va_end(args);
 
     if (r > 0) {
-        EtaCspUartPuts(&etaUart, print_buf);
+       printf(print_buf);
     }
 }
 
 __attribute__((weak)) void ei_printf_float(float f) {
-    ei_printf("%f", f);
+    printf("%f", f);
 }
 
 __attribute__((weak)) void *ei_malloc(size_t size) {
+#ifdef FREERTOS_ENABLED
     return pvPortMalloc(size);
+#else
+    return malloc(size);
+#endif
 }
 
-__attribute__((weak)) void *ei_calloc(size_t nitems, size_t size) {
-
-    uint32_t ix;
-    uint8_t *ptr = (uint8_t *)pvPortMalloc(nitems * size);
-
-    if(ptr) {
-        for (ix = 0; ix < (nitems * size); ix++) {
-            *(ptr + ix) = 0;
-        }
+#ifdef FREERTOS_ENABLED
+void *pvPortCalloc(size_t sNb, size_t sSize)
+{
+    void *vPtr = NULL;
+    if (sSize > 0) {
+        vPtr = pvPortMalloc(sSize * sNb); // Call FreeRTOS or other standard API
+        if(vPtr)
+           memset(vPtr, 0, (sSize * sNb)); // Must required
     }
+    return vPtr;
+}
+#endif
 
-    return (void *)ptr;
+__attribute__((weak)) void *ei_calloc(size_t nitems, size_t size) {
+#ifdef FREERTOS_ENABLED
+    return pvPortCalloc(nitems, size);
+#else
+    return calloc(nitems, size);
+#endif
 }
 
 __attribute__((weak)) void ei_free(void *ptr) {
+#ifdef FREERTOS_ENABLED
     vPortFree(ptr);
+#else
+    free(ptr);
+#endif
 }
 
 #if defined(__cplusplus) && EI_C_LINKAGE == 1
@@ -96,4 +128,4 @@ __attribute__((weak)) void DebugLog(const char* s) {
     ei_printf("%s", s);
 }
 
-#endif // EI_PORTING_ECM3532 == 1
+#endif // EI_PORTING_RASPBERRY == 1

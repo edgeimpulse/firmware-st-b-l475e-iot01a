@@ -278,22 +278,38 @@ void run_nn_continuous(bool debug) {
             break;
         }
 
-        if(++print_results >= (EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW >> 1)) {
-            // print the predictions
-            printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
-                result.timing.dsp, result.timing.classification, result.timing.anomaly);
-            for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-                printf("    %s: %.5f\n", result.classification[ix].label, result.classification[ix].value);
+        if (++print_results >= (EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW >> 1)) {
+
+            if(result.label_detected >= 0) {
+                printf("LABEL DETECTED : %s\r\n", result.classification[result.label_detected].label);
+
+                // print the predictions
+                printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
+                        result.timing.dsp, result.timing.classification, result.timing.anomaly);
+                for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
+                    printf("    %s: %.5f\n", result.classification[ix].label,
+                            result.classification[ix].value);
+                }
             }
-            #if EI_CLASSIFIER_HAS_ANOMALY == 1
+            else {
+                const char spinner[] = {'/', '-', '\\', '|'};
+                static char spin = 0;
+                printf("Running inference %c\r", spinner[spin]);
+
+                if(++spin >= sizeof(spinner)) {
+                    spin = 0;
+                }
+            }
+#if EI_CLASSIFIER_HAS_ANOMALY == 1
             printf("    anomaly score: %.3f\n", result.anomaly);
-            #endif
+#endif
 
             print_results = 0;
         }
     }
 
     ei_microphone_inference_end();
+    run_classifier_deinit();
 }
 
 void run_nn_continuous_normal() {

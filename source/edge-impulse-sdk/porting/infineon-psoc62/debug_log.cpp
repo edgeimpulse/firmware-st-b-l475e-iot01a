@@ -21,7 +21,7 @@
  */
 
 #include "../ei_classifier_porting.h"
-#if EI_PORTING_ECM3532 == 1
+#if EI_PORTING_INFINEONPSOC62 == 1
 
 #include "edge-impulse-sdk/tensorflow/lite/micro/debug_log.h"
 #include <stdio.h>
@@ -35,4 +35,4 @@ void DebugLog(const char* s) {
     ei_printf("%s", s);
 }
 
-#endif // EI_PORTING_ECM3532 == 1
+#endif // EI_PORTING_INFINEONPSOC62 == 1
