@@ -108,9 +108,3 @@ $ mbed config -G PROTOCOL SSH
 1. Just press 'Run' in Visual Studio Code to build and debug.
 
 If the debugger does not properly detach, run `killall st-util`.
-
-## Updating the TensorFlow Lite for Microcontrollers library
-
-To update to a different commit of the TensorFlow Lite for Microcontrollers library, edit the script `update_tflite.sh` and include the new commit hash. Run the script from the parent directory of the firmware.
-
-This script also ensures the CMSIS libraries are the same version used by the TensorFlow Lite project.
