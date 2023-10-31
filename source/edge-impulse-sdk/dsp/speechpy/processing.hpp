@@ -84,9 +84,6 @@ public:
                 EIDSP_ERR(ret);
             }
 
-            // it might be that everything is already normalized here...
-            bool all_between_min_1_and_1 = true;
-
             // now we have the signal and we can preemphasize
             for (size_t ix = 0; ix < length; ix++) {
                 float now = out_buffer[ix];
@@ -100,12 +97,6 @@ public:
                     out_buffer[ix] = now - (_cof * _prev_buffer[0]);
                 }
 
-                if (_rescale && all_between_min_1_and_1) {
-                    if (out_buffer[ix] < -1.0f || out_buffer[ix] > 1.0f) {
-                        all_between_min_1_and_1 = false;
-                    }
-                }
-
                 // roll through and overwrite last element
                 if (_shift != 1) {
                     numpy::roll(_prev_buffer, _shift, -1);
@@ -116,7 +107,7 @@ public:
             _next_offset_should_be += length;
 
             // rescale from [-1 .. 1] ?
-            if (_rescale && !all_between_min_1_and_1) {
+            if (_rescale) {
                 matrix_t scale_matrix(length, 1, out_buffer);
                 ret = numpy::scale(&scale_matrix, 1.0f / 32768.0f);
                 if (ret != 0) {

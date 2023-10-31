@@ -794,6 +794,10 @@ __attribute__((unused)) int extract_mfe_features(signal_t *signal, matrix_t *out
         EIDSP_ERR(EIDSP_PARAMETER_INVALID);
     }
 
+    if ((config.implementation_version == 0) || (config.implementation_version > 4)) {
+        EIDSP_ERR(EIDSP_BLOCK_VERSION_INCORRECT);
+    }
+
     const uint32_t frequency = static_cast<uint32_t>(sampling_frequency);
 
     signal_t preemphasized_audio_signal;
@@ -945,6 +949,10 @@ __attribute__((unused)) int extract_mfe_per_slice_features(signal_t *signal, mat
 
     if (config.axes != 1) {
         EIDSP_ERR(EIDSP_MATRIX_SIZE_MISMATCH);
+    }
+
+    if ((config.implementation_version == 0) || (config.implementation_version > 4)) {
+        EIDSP_ERR(EIDSP_BLOCK_VERSION_INCORRECT);
     }
 
     if (signal->total_length == 0) {
