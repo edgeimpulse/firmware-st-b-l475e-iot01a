@@ -87,6 +87,12 @@ void ei_serial_set_baudrate(int baudrate);
 void ei_putchar(char c);
 
 /**
+ * @brief       Connect to getchar of target
+ * @return      character from serial
+*/
+char ei_getchar(void);
+
+/**
  * Print wrapper around printf()
  * This is used internally to print debug information.
  */

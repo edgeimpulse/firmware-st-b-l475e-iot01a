@@ -117,7 +117,7 @@ static EI_IMPULSE_ERROR inference_tflite_setup(
 #ifdef EI_TFLITE_RESOLVER
     EI_TFLITE_RESOLVER
 #else
-    tflite::AllOpsResolver resolver;
+    static tflite::AllOpsResolver resolver; // needs static to match the life of the interpreter
 #endif
 
     // Build an interpreter to run the model with.

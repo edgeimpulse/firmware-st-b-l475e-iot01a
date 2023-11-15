@@ -515,7 +515,7 @@ namespace processing {
      * then add a hard filter
      * @param features_matrix input feature matrix, will be modified in place
      */
-    static int spectrogram_normalization(matrix_t *features_matrix, int noise_floor_db) {
+    static int spectrogram_normalization(matrix_t *features_matrix, int noise_floor_db, bool clip_at_one) {
         const float noise = static_cast<float>(noise_floor_db * -1);
         const float noise_scale = 1.0f / (static_cast<float>(noise_floor_db * -1) + 12.0f);
 
@@ -530,7 +530,7 @@ namespace processing {
             f *= noise_scale;
             // clip again
             if (f < 0.0f) f = 0.0f;
-            else if (f > 1.0f) f = 1.0f;
+            else if (f > 1.0f && clip_at_one) f = 1.0f;
             features_matrix->buffer[ix] = f;
         }
 

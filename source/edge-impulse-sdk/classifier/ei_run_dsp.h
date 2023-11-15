@@ -557,7 +557,7 @@ __attribute__((unused)) int extract_spectrogram_features(signal_t *signal, matri
     }
     else {
         // normalization
-        ret = speechpy::processing::spectrogram_normalization(output_matrix, config.noise_floor_db);
+        ret = speechpy::processing::spectrogram_normalization(output_matrix, config.noise_floor_db, config.implementation_version == 3);
         if (ret != EIDSP_OK) {
             ei_printf("ERR: normalization failed (%d)\n", ret);
             EIDSP_ERR(ret);
@@ -1504,7 +1504,7 @@ __attribute__((unused)) void calc_cepstral_mean_and_var_normalization_spectrogra
     }
     else {
         // normalization
-        int ret = speechpy::processing::spectrogram_normalization(matrix, config->noise_floor_db);
+        int ret = speechpy::processing::spectrogram_normalization(matrix, config->noise_floor_db, config->implementation_version == 3);
         if (ret != EIDSP_OK) {
             ei_printf("ERR: normalization failed (%d)\n", ret);
             return;
