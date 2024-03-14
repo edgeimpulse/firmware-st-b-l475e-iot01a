@@ -158,15 +158,7 @@ void run_nn(bool debug) {
             break;
         }
 
-        // print the predictions
-        printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
-            result.timing.dsp, result.timing.classification, result.timing.anomaly);
-        for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-            printf("    %s: %.5f\n", result.classification[ix].label, result.classification[ix].value);
-        }
-#if EI_CLASSIFIER_HAS_ANOMALY == 1
-        printf("    anomaly score: %.3f\n", result.anomaly);
-#endif
+        display_results(&result);
 
         sampler->finish();
         fclose(file);
@@ -226,15 +218,7 @@ void run_nn(bool debug) {
             break;
         }
 
-        // print the predictions
-        printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
-            result.timing.dsp, result.timing.classification, result.timing.anomaly);
-        for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-            printf("    %s: %.5f\n", result.classification[ix].label, result.classification[ix].value);
-        }
-#if EI_CLASSIFIER_HAS_ANOMALY == 1
-        printf("    anomaly score: %.3f\n", result.anomaly);
-#endif
+        display_results(&result);
     }
 }
 
@@ -279,18 +263,7 @@ void run_nn_continuous(bool debug) {
         }
 
         if (++print_results >= (EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW >> 1)) {
-
-            // print the predictions
-            printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
-                    result.timing.dsp, result.timing.classification, result.timing.anomaly);
-            for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-                printf("    %s: %.5f\n", result.classification[ix].label,
-                        result.classification[ix].value);
-            }
-#if EI_CLASSIFIER_HAS_ANOMALY == 1
-            printf("    anomaly score: %.3f\n", result.anomaly);
-#endif
-
+            display_results(&result);
             print_results = 0;
         }
     }
