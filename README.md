@@ -12,7 +12,7 @@
 
 **Software**
 
-* [Node.js 10.16](https://nodejs.org/en/download/) or higher.
+* [Node.js 16](https://nodejs.org/en/download/) or higher.
 * [Git](https://git-scm.com/downloads) - make sure `git` is in your PATH.
 * [Mercurial](https://www.mercurial-scm.org) - make sure `hg` is in your PATH.
 * [GNU ARM Embedded Toolchain 9-2019-q4-major](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads).
