@@ -37,6 +37,7 @@
 #include "LittleFileSystem.h"
 #include "model-parameters/model_metadata.h"
 #include "ei_run_classifier.h"
+#include "edge-impulse-sdk/classifier/ei_print_results.h"
 #include "NTPClient.h"
 #include "at_cmd_repl_mbed.h"
 #include "mbed_fs_commands.h"
@@ -170,7 +171,7 @@ void run_nn(bool debug) {
             break;
         }
 
-        display_results(&ei_default_impulse, &result);
+        ei_print_results(&ei_default_impulse, &result);
 
         sampler->finish();
         fclose(file);
@@ -230,7 +231,7 @@ void run_nn(bool debug) {
             break;
         }
 
-        display_results(&ei_default_impulse, &result);
+        ei_print_results(&ei_default_impulse, &result);
     }
 }
 
@@ -275,7 +276,7 @@ void run_nn_continuous(bool debug) {
         }
 
         if (++print_results >= (EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW >> 1)) {
-            display_results(&ei_default_impulse, &result);
+            ei_print_results(&ei_default_impulse, &result);
             print_results = 0;
         }
     }
